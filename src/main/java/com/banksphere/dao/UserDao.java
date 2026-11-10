@@ -14,16 +14,25 @@ import java.util.Optional;
 
 public class UserDao {
 
-    // Insert a new user into the database
+
+    // Insert a new user using an internally managed connection
     public int saveUser(User user) throws SQLException {
+
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            return saveUser(connection, user);
+        }
+    }
+
+    // Insert a new user using an existing database connection
+    public int saveUser(Connection connection, User user)
+            throws SQLException {
 
         String sql = "INSERT INTO users (username, password, role) " +
                 "VALUES (?, ?, ?)";
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement =
-                     connection.prepareStatement(sql,
-                             PreparedStatement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement preparedStatement =
+                     connection.prepareStatement(
+                             sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
             preparedStatement.setString(1, user.getUsername());
             preparedStatement.setString(2, user.getPasswordHash());
@@ -51,6 +60,7 @@ public class UserDao {
             }
         }
     }
+
 
     // Find a user using username
     public Optional<User> findByUsername(String username)
